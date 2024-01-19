@@ -1,0 +1,57 @@
+import pandas as pd
+import mysql.connector
+
+# MySQL database connection parameters
+db_config = {
+    'host': 'localhost',
+    'user': 'root',
+    'password': 'Sruthi@2003',
+    'database': 'rp'
+}
+
+# Load existing Excel file
+excel_file_path = r'C:\Users\home\Documents\RPA\FEB_2022.xlsx'
+
+# Establish a connection to the database
+conn = mysql.connector.connect(**db_config)
+cursor = conn.cursor()
+
+# Table name
+table_name = 'feb_2022'
+
+# Read Excel data into a Pandas DataFrame
+df = pd.read_excel(excel_file_path)
+
+# Iterate through DataFrame rows and insert data into MySQL table
+for _, row in df.iterrows():
+    # Generate the SQL query for inserting data
+    insert_query = f'''
+    INSERT INTO {table_name} (
+        SR_NO, BANK_NAME, NO_ATM_ONSITE_CNT, NO_ATM_OFFSITE_CNT, ON_LINE_POS,
+        NO_POS_CNT, NO_MICRO_ATM_CNT, NO_BHARAT_QR_CODES_CNT, NO_UPI_QR_CODES_CNT,
+        NO_CREDIT_CARDS_CNT, NO_DEBIT_CARDS_CNT, CC_CPT_POS_VOLUME, CC_CPT_POS_VALUE_K,
+        CC_CPT_ONLINE_VOLUME, CC_CPT_ONLINE_VALUE_K, CC_CPT_OTHERS_VOLUME,
+        CC_CPT_OTHERS_VALUE_K, CC_CW_AT_ATM_VOLUME, CC_CW_AT_ATM_VALUE_K,
+        DC_CPT_POS_VOLUME, DC_CPT_POS_VALUE_K, DC_CPT_ONLINE_VOLUME,
+        DC_CPT_ONLINE_VALUE_K, DC_CPT_OTHERS_VOLUME, DC_CPT_OTHERS_VALUE_K,
+        DC_CW_ATM_VOLUME, DC_CW_ATM_VALUE_K, DC_CW_POS_VOLUME, DC_CW_POS_VALUE_K,
+        BANK_TYPE, STATS_YEAR, STATS_MONTH, CREATED_BY, CREATED_DATE
+    )
+    VALUES (
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+    );
+    '''
+
+    # Convert NaN values to None
+    row = row.where(pd.notna(row), None)
+
+    # Extract values from the current row and convert them to a tuple
+    values = tuple(row)
+
+    # Execute the insert query with the corresponding values
+    cursor.execute(insert_query, values)
+
+# Commit the changes and close the connection
+conn.commit()
+conn.close()
